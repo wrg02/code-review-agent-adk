@@ -1,5 +1,7 @@
 # Governance Agent
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 ## Overview
 
 The Governance Agent is a multi-agent system built with [Google ADK](https://google.github.io/adk-docs/) (Agent Developer Kit) that automatically reviews pull requests and answers governance questions across three domains: **compliance/PR standards**, **security**, and **code quality**. It exposes a Flask API deployed on Cloud Run, integrates with GitHub via Cloud Build to gate PRs, and provides a chat UI for interactive queries. Rules are stored as Markdown files in GCS, making them editable without redeploying.
