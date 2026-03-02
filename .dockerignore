@@ -1,4 +1,4 @@
-# Secrets — nunca incluir na imagem
+# Secrets — never include in the image
 .env
 *.env
 *.key
@@ -6,7 +6,7 @@
 service-account*.json
 credentials*.json
 
-# Ambiente virtual local
+# Local virtual environment
 .venv/
 venv/
 env/
@@ -18,10 +18,10 @@ __pycache__/
 .pytest_cache/
 .coverage
 
-# Dev / CI
+# Dev / CI only
 tests/
 docs/
-regras/
+rules/
 .gitignore
 .dockerignore
 README.md

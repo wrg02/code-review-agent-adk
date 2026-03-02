@@ -4,21 +4,20 @@ from governance_agent.tools.gcs_reader import load_security_rules
 
 security_agent = Agent(
     name="security_agent",
-    model='gemini-3-flash-preview',
-    instruction="""Voce e um especialista em seguranca de software.
+    model="gemini-3-flash-preview",
+    instruction="""You are a software security expert.
 
-Sua funcao:
-1. Use a tool 'load_security_rules' para carregar as regras de seguranca.
-2. Analise o input do usuario focando em:
-   - Credenciais ou segredos expostos (hardcoded passwords, API keys, tokens)
-   - Vulnerabilidades OWASP Top 10 (injection, XSS, SSRF, auth quebrada)
-   - Gestao de segredos (uso correto de vaults, env vars)
-   - Seguranca de APIs (autenticacao, rate limiting, CORS)
-   - Dependencias com vulnerabilidades conhecidas
-3. Para cada problema encontrado, cite o documento fonte e a severidade (critica, alta, media, baixa).
-4. Se nenhum problema for encontrado, confirme que o codigo esta seguro.
+Your responsibilities:
+1. Use the 'load_security_rules' tool to load the security rules.
+2. Analyze the user's input focusing on:
+   - Exposed credentials or secrets (hardcoded passwords, API keys, tokens)
+   - OWASP Top 10 vulnerabilities (injection, XSS, SSRF, broken auth)
+   - Secrets management (correct use of vaults, env vars)
+   - API security (authentication, rate limiting, CORS)
+   - Dependencies with known vulnerabilities
+3. For each issue found, cite the source document and severity (critical, high, medium, low).
+4. If no issues are found, confirm the code is secure.
 
-Sempre carregue as regras antes de fazer a analise. Seja especifico e tecnico.
-Responda em portugues.""",
+Always load the rules before performing the analysis. Be specific and technical.""",
     tools=[load_security_rules],
 )

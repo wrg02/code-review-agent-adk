@@ -7,7 +7,7 @@ LOCAL_RULES_DIR = os.environ.get("LOCAL_RULES_DIR", "")
 
 
 def _read_rules_from_gcs(bucket: str, prefix: str) -> str:
-    """Lista blobs no prefixo do bucket GCS, filtra .md/.txt e concatena conteudo."""
+    """List blobs under the given GCS prefix, filter .md/.txt files, and concatenate their content."""
     from google.cloud import storage
 
     client = storage.Client()
@@ -22,15 +22,15 @@ def _read_rules_from_gcs(bucket: str, prefix: str) -> str:
             parts.append(f"--- {filename} ---\n{content}")
 
     if not parts:
-        return f"Nenhuma regra encontrada no prefixo '{prefix}'."
+        return f"No rules found under prefix '{prefix}'."
     return "\n\n".join(parts)
 
 
 def _read_rules_local(base_dir: str, prefix: str) -> str:
-    """Le regras de um diretorio local (para desenvolvimento e testes)."""
+    """Read rules from a local directory (for development and testing)."""
     rules_path = os.path.join(base_dir, prefix)
     if not os.path.isdir(rules_path):
-        return f"Diretorio de regras nao encontrado: {rules_path}"
+        return f"Rules directory not found: {rules_path}"
 
     parts = []
     for filepath in sorted(glob_mod.glob(os.path.join(rules_path, "**/*"), recursive=True)):
@@ -41,38 +41,38 @@ def _read_rules_local(base_dir: str, prefix: str) -> str:
             parts.append(f"--- {filename} ---\n{content}")
 
     if not parts:
-        return f"Nenhuma regra encontrada em '{rules_path}'."
+        return f"No rules found in '{rules_path}'."
     return "\n\n".join(parts)
 
 
 def _load_rules(prefix: str) -> str:
-    """Carrega regras do GCS ou local, dependendo da configuracao."""
+    """Load rules from GCS or local directory depending on configuration."""
     if LOCAL_RULES_DIR:
         return _read_rules_local(LOCAL_RULES_DIR, prefix)
     if RULES_BUCKET:
         return _read_rules_from_gcs(RULES_BUCKET, prefix)
-    return "Erro: nem RULES_BUCKET nem LOCAL_RULES_DIR estao configurados."
+    return "Error: neither RULES_BUCKET nor LOCAL_RULES_DIR is configured."
 
 
 def load_governance_rules() -> str:
-    """Carrega as regras de governanca (compliance, padroes de PR, branching).
+    """Load governance rules (compliance, PR standards, branching strategy).
 
-    Retorna o conteudo concatenado de todos os documentos de governanca.
+    Returns the concatenated content of all governance rule documents.
     """
     return _load_rules("governance/")
 
 
 def load_security_rules() -> str:
-    """Carrega as regras de seguranca (secrets, OWASP, dependencias, APIs).
+    """Load security rules (secrets management, OWASP, dependencies, APIs).
 
-    Retorna o conteudo concatenado de todos os documentos de seguranca.
+    Returns the concatenated content of all security rule documents.
     """
     return _load_rules("security/")
 
 
 def load_code_quality_rules() -> str:
-    """Carrega as regras de qualidade de codigo (naming, error handling, testes).
+    """Load code quality rules (naming conventions, error handling, testing).
 
-    Retorna o conteudo concatenado de todos os documentos de qualidade de codigo.
+    Returns the concatenated content of all code quality rule documents.
     """
     return _load_rules("code-quality/")

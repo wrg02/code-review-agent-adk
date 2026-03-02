@@ -1,4 +1,4 @@
-# Secrets — nunca commitar
+# Secrets — never commit
 .env
 *.env
 *.key
@@ -6,7 +6,7 @@
 service-account*.json
 credentials*.json
 
-# Ambiente virtual
+# Virtual environment
 .venv/
 venv/
 env/

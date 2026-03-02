@@ -19,7 +19,7 @@ runner = Runner(agent=root_agent, app_name="governance_app", session_service=ses
 
 
 async def _run_agent(user_input: str) -> str:
-    """Executa o agente com o input do usuario e retorna a resposta final."""
+    """Run the agent with the given input and return the final response."""
     session = await session_service.create_session(
         app_name="governance_app", user_id="api_user"
     )
@@ -41,7 +41,7 @@ async def _run_agent(user_input: str) -> str:
 
 
 def _extract_json_from_text(text: str) -> dict:
-    """Extrai um objeto JSON de texto que pode conter markdown."""
+    """Extract a JSON object from text that may contain markdown code fences."""
     clean = text.strip()
     if "```json" in clean:
         clean = clean.split("```json")[1].split("```")[0]
@@ -56,19 +56,19 @@ def _extract_json_from_text(text: str) -> dict:
 
 
 def _build_feedback_md(result: dict) -> str:
-    """Gera o Markdown de feedback a partir do resultado da revisao."""
-    lines = ["## Review de Governanca (ADK Multi-Agent)\n"]
-    if result.get("aprovado"):
-        lines.append("**Status: Aprovado**\n")
-        lines.append("O codigo esta em conformidade com as diretrizes configuradas.\n")
+    """Build a Markdown feedback message from the review result."""
+    lines = ["## Governance Review (ADK Multi-Agent)\n"]
+    if result.get("approved"):
+        lines.append("**Status: Approved**\n")
+        lines.append("The code complies with all configured governance guidelines.\n")
     else:
-        lines.append("**Status: Bloqueado**\n")
-        lines.append("Foram encontradas as seguintes violacoes:\n")
-        for violacao in result.get("violacoes", []):
-            lines.append(f"- {violacao}")
-        recomendacao = result.get("recomendacao", "")
-        if recomendacao:
-            lines.append(f"\n**Recomendacao Corretiva:**\n> {recomendacao}\n")
+        lines.append("**Status: Blocked**\n")
+        lines.append("The following violations were found:\n")
+        for violation in result.get("violations", []):
+            lines.append(f"- {violation}")
+        recommendation = result.get("recommendation", "")
+        if recommendation:
+            lines.append(f"\n**Corrective Recommendation:**\n> {recommendation}\n")
     return "\n".join(lines)
 
 
@@ -84,16 +84,16 @@ def health():
 
 @app.route("/query", methods=["POST"])
 async def query():
-    """Endpoint generico para qualquer cliente (Slack, CLI, Cloud Build, etc.)."""
+    """Generic endpoint for any client (Slack, CLI, etc.)."""
     body = request.get_json(force=True)
     user_input = body.get("input", "")
     context = body.get("context", {})
 
     if not user_input.strip():
-        return jsonify({"error": "Campo 'input' vazio ou ausente."}), 400
+        return jsonify({"error": "Field 'input' is empty or missing."}), 400
 
     if context:
-        user_input += f"\n\nContexto adicional:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
+        user_input += f"\n\nAdditional context:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
 
     response_text = await _run_agent(user_input)
 
@@ -102,23 +102,23 @@ async def query():
 
 @app.route("/review", methods=["POST"])
 async def review():
-    """Endpoint de conveniencia para PR review (Cloud Build)."""
+    """Convenience endpoint for PR review (Cloud Build)."""
     body = request.get_json(force=True)
     diff = body.get("diff", "")
 
     if not diff.strip():
-        return jsonify({"error": "Campo 'diff' vazio ou ausente."}), 400
+        return jsonify({"error": "Field 'diff' is empty or missing."}), 400
 
-    prompt = f"""Analise o seguinte diff de Pull Request contra TODAS as regras de governanca, seguranca e qualidade de codigo.
+    prompt = f"""Analyze the following Pull Request diff against ALL governance, security, and code quality rules.
 
-Retorne sua analise como um JSON com a seguinte estrutura:
+Return your analysis as a JSON object with the following structure:
 {{
-  "aprovado": booleano (true se nenhuma violacao critica, false caso contrario),
-  "violacoes": ["lista de violacoes encontradas"],
-  "recomendacao": "recomendacao geral para o autor do PR"
+  "approved": boolean (true if no critical violations, false otherwise),
+  "violations": ["list of violations found"],
+  "recommendation": "overall recommendation for the PR author"
 }}
 
-Diff do PR:
+PR Diff:
 {diff}"""
 
     response_text = await _run_agent(prompt)
@@ -127,9 +127,9 @@ Diff do PR:
         result = _extract_json_from_text(response_text)
     except (json.JSONDecodeError, ValueError):
         return jsonify({
-            "aprovado": False,
-            "violacoes": [],
-            "recomendacao": "",
+            "approved": False,
+            "violations": [],
+            "recommendation": "",
             "feedback_md": response_text,
             "raw_response": response_text,
         }), 200
@@ -137,9 +137,9 @@ Diff do PR:
     feedback_md = _build_feedback_md(result)
 
     return jsonify({
-        "aprovado": result.get("aprovado", False),
-        "violacoes": result.get("violacoes", []),
-        "recomendacao": result.get("recomendacao", ""),
+        "approved": result.get("approved", False),
+        "violations": result.get("violations", []),
+        "recommendation": result.get("recommendation", ""),
         "feedback_md": feedback_md,
     }), 200
 

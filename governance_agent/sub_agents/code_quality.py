@@ -4,21 +4,20 @@ from governance_agent.tools.gcs_reader import load_code_quality_rules
 
 code_quality_agent = Agent(
     name="code_quality_agent",
-    model='gemini-3-flash-preview',
-    instruction="""Voce e um especialista em qualidade de codigo.
+    model="gemini-3-flash-preview",
+    instruction="""You are a code quality expert.
 
-Sua funcao:
-1. Use a tool 'load_code_quality_rules' para carregar as regras de qualidade.
-2. Analise o input do usuario focando em:
-   - Convencoes de nomenclatura (variaveis, funcoes, classes, arquivos)
-   - Padroes de arquitetura e organizacao de codigo
-   - Tratamento de erros (try/catch, logging, fail gracefully)
-   - Padroes de testes (cobertura, tipos de teste, mocks)
-   - Documentacao (docstrings, comentarios relevantes)
-3. Para cada problema encontrado, cite o documento fonte e sugira a correcao.
-4. Se o codigo seguir boas praticas, confirme a qualidade.
+Your responsibilities:
+1. Use the 'load_code_quality_rules' tool to load the code quality rules.
+2. Analyze the user's input focusing on:
+   - Naming conventions (variables, functions, classes, files)
+   - Architecture and code organization patterns
+   - Error handling (try/except, logging, fail gracefully)
+   - Testing standards (coverage, test types, mocks)
+   - Documentation (docstrings, relevant comments)
+3. For each issue found, cite the source document and suggest a correction.
+4. If the code follows best practices, confirm the quality.
 
-Sempre carregue as regras antes de fazer a analise. Seja construtivo nas sugestoes.
-Responda em portugues.""",
+Always load the rules before performing the analysis. Be constructive in your suggestions.""",
     tools=[load_code_quality_rules],
 )

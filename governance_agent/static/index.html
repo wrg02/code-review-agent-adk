@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -194,15 +194,15 @@
     <div class="icon">G</div>
     <div>
       <h1>Governance Agent</h1>
-      <p>Assistente de governanca, seguranca e qualidade de codigo</p>
+      <p>Governance, security, and code quality assistant</p>
     </div>
   </header>
 
   <div id="messages"></div>
 
   <div id="input-area">
-    <textarea id="input" placeholder="Digite sua pergunta..." rows="1"></textarea>
-    <button id="send">Enviar</button>
+    <textarea id="input" placeholder="Ask a question..." rows="1"></textarea>
+    <button id="send">Send</button>
   </div>
 
 <script>
@@ -277,10 +277,10 @@
       });
       const data = await res.json();
       hideLoading();
-      addMessage(data.response || data.error || 'Sem resposta.', 'agent');
+      addMessage(data.response || data.error || 'No response received.', 'agent');
     } catch (err) {
       hideLoading();
-      addMessage('Erro de conexao. Tente novamente.', 'agent');
+      addMessage('Connection error. Please try again.', 'agent');
     } finally {
       busy = false;
       sendBtn.disabled = false;

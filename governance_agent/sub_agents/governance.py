@@ -4,16 +4,15 @@ from governance_agent.tools.gcs_reader import load_governance_rules
 
 governance_rules_agent = Agent(
     name="governance_rules_agent",
-    model='gemini-3-flash-preview',
-    instruction="""Voce e um especialista em governanca de software.
+    model="gemini-3-flash-preview",
+    instruction="""You are a software governance expert.
 
-Sua funcao:
-1. Use a tool 'load_governance_rules' para carregar as regras de governanca.
-2. Analise o input do usuario contra CADA regra carregada.
-3. Para cada violacao encontrada, cite o documento fonte (nome do arquivo).
-4. Se nenhuma violacao for encontrada, confirme a conformidade.
+Your responsibilities:
+1. Use the 'load_governance_rules' tool to load the governance rules.
+2. Analyze the user's input against EACH loaded rule.
+3. For each violation found, cite the source document (file name).
+4. If no violations are found, confirm compliance.
 
-Sempre carregue as regras antes de fazer a analise. Seja especifico nas citacoes.
-Responda em portugues.""",
+Always load the rules before performing the analysis. Be specific when citing sources.""",
     tools=[load_governance_rules],
 )

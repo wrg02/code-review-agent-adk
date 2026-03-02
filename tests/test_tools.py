@@ -12,34 +12,32 @@ from governance_agent.tools.gcs_reader import (
 
 
 class TestReadRulesLocal(unittest.TestCase):
-    def test_reads_markdown_files(self):
-        base_dir = os.path.join(os.path.dirname(__file__), "..", "regras")
+    def test_reads_governance_files(self):
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "rules")
         result = _read_rules_local(base_dir, "governance/")
         self.assertIn("compliance.md", result)
         self.assertIn("pr_standards.md", result)
-        self.assertIn("LGPD", result)
+        self.assertIn("Compliance", result)
 
     def test_reads_security_rules(self):
-        base_dir = os.path.join(os.path.dirname(__file__), "..", "regras")
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "rules")
         result = _read_rules_local(base_dir, "security/")
         self.assertIn("secrets_management.md", result)
         self.assertIn("owasp_top10.md", result)
 
     def test_reads_code_quality_rules(self):
-        base_dir = os.path.join(os.path.dirname(__file__), "..", "regras")
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "rules")
         result = _read_rules_local(base_dir, "code-quality/")
         self.assertIn("naming_conventions.md", result)
         self.assertIn("error_handling.md", result)
 
     def test_missing_directory(self):
         result = _read_rules_local("/tmp", "nonexistent/")
-        self.assertIn("nao encontrado", result)
+        self.assertIn("not found", result)
 
 
 class TestLoadRulesWithLocalDir(unittest.TestCase):
-    @patch.dict(os.environ, {"LOCAL_RULES_DIR": "", "RULES_BUCKET": ""})
     def test_no_config_returns_error(self):
-        # Reload to pick up env changes
         from governance_agent.tools import gcs_reader
         original_local = gcs_reader.LOCAL_RULES_DIR
         original_bucket = gcs_reader.RULES_BUCKET
@@ -47,7 +45,7 @@ class TestLoadRulesWithLocalDir(unittest.TestCase):
         gcs_reader.RULES_BUCKET = ""
         try:
             result = _load_rules("governance/")
-            self.assertIn("Erro", result)
+            self.assertIn("Error", result)
         finally:
             gcs_reader.LOCAL_RULES_DIR = original_local
             gcs_reader.RULES_BUCKET = original_bucket
@@ -61,11 +59,11 @@ class TestLoadRulesFromGCS(unittest.TestCase):
         original_bucket = gcs_reader.RULES_BUCKET
         gcs_reader.LOCAL_RULES_DIR = ""
         gcs_reader.RULES_BUCKET = "my-bucket"
-        mock_gcs.return_value = "regras do gcs"
+        mock_gcs.return_value = "rules from gcs"
         try:
             result = _load_rules("governance/")
             mock_gcs.assert_called_once_with("my-bucket", "governance/")
-            self.assertEqual(result, "regras do gcs")
+            self.assertEqual(result, "rules from gcs")
         finally:
             gcs_reader.LOCAL_RULES_DIR = original_local
             gcs_reader.RULES_BUCKET = original_bucket
@@ -75,19 +73,19 @@ class TestDomainFunctions(unittest.TestCase):
     @patch("governance_agent.tools.gcs_reader._load_rules")
     def test_load_governance_rules(self, mock_load):
         mock_load.return_value = "governance content"
-        result = load_governance_rules()
+        load_governance_rules()
         mock_load.assert_called_with("governance/")
 
     @patch("governance_agent.tools.gcs_reader._load_rules")
     def test_load_security_rules(self, mock_load):
         mock_load.return_value = "security content"
-        result = load_security_rules()
+        load_security_rules()
         mock_load.assert_called_with("security/")
 
     @patch("governance_agent.tools.gcs_reader._load_rules")
     def test_load_code_quality_rules(self, mock_load):
         mock_load.return_value = "quality content"
-        result = load_code_quality_rules()
+        load_code_quality_rules()
         mock_load.assert_called_with("code-quality/")
 
 

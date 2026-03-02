@@ -37,24 +37,24 @@ class TestAPIEndpoints(unittest.TestCase):
 
     @patch("governance_agent.app._run_agent")
     def test_query_success(self, mock_run):
-        mock_run.return_value = "Analise completa. Sem violacoes."
+        mock_run.return_value = "Analysis complete. No violations found."
         response = self.client.post(
             "/query",
-            data=json.dumps({"input": "Verifique este codigo: print('hello')"}),
+            data=json.dumps({"input": "Check this code: print('hello')"}),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertIn("response", data)
-        self.assertEqual(data["response"], "Analise completa. Sem violacoes.")
+        self.assertEqual(data["response"], "Analysis complete. No violations found.")
 
     @patch("governance_agent.app._run_agent")
     def test_query_with_context(self, mock_run):
-        mock_run.return_value = "Analise com contexto."
+        mock_run.return_value = "Analysis with context."
         response = self.client.post(
             "/query",
             data=json.dumps({
-                "input": "Analise este PR",
+                "input": "Analyze this PR",
                 "context": {"repo": "my-repo", "pr_number": 42},
             }),
             content_type="application/json",
@@ -67,9 +67,9 @@ class TestAPIEndpoints(unittest.TestCase):
     @patch("governance_agent.app._run_agent")
     def test_review_success_approved(self, mock_run):
         mock_run.return_value = json.dumps({
-            "aprovado": True,
-            "violacoes": [],
-            "recomendacao": "Codigo OK.",
+            "approved": True,
+            "violations": [],
+            "recommendation": "Code looks good.",
         })
         response = self.client.post(
             "/review",
@@ -78,16 +78,16 @@ class TestAPIEndpoints(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertTrue(data["aprovado"])
-        self.assertEqual(data["violacoes"], [])
-        self.assertIn("Aprovado", data["feedback_md"])
+        self.assertTrue(data["approved"])
+        self.assertEqual(data["violations"], [])
+        self.assertIn("Approved", data["feedback_md"])
 
     @patch("governance_agent.app._run_agent")
     def test_review_success_rejected(self, mock_run):
         mock_run.return_value = json.dumps({
-            "aprovado": False,
-            "violacoes": ["Hardcoded password detectado"],
-            "recomendacao": "Usar Secret Manager.",
+            "approved": False,
+            "violations": ["Hardcoded password detected"],
+            "recommendation": "Use Secret Manager.",
         })
         response = self.client.post(
             "/review",
@@ -96,13 +96,13 @@ class TestAPIEndpoints(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertFalse(data["aprovado"])
-        self.assertIn("Hardcoded password detectado", data["violacoes"])
-        self.assertIn("Bloqueado", data["feedback_md"])
+        self.assertFalse(data["approved"])
+        self.assertIn("Hardcoded password detected", data["violations"])
+        self.assertIn("Blocked", data["feedback_md"])
 
     @patch("governance_agent.app._run_agent")
     def test_review_non_json_response(self, mock_run):
-        mock_run.return_value = "Resposta sem JSON estruturado."
+        mock_run.return_value = "Response without structured JSON."
         response = self.client.post(
             "/review",
             data=json.dumps({"diff": "+some code"}),
@@ -110,7 +110,7 @@ class TestAPIEndpoints(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertFalse(data["aprovado"])
+        self.assertFalse(data["approved"])
         self.assertIn("raw_response", data)
 
 
