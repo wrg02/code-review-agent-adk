@@ -6,51 +6,45 @@ The Governance Agent is a multi-agent system built with [Google ADK](https://goo
 
 ## Architecture
 
-```
+```mermaid
 flowchart TD
-    CB["☁️ Cloud Build\nPR Review pipeline"]
-    CHAT["🌐 Browser\nChat UI (GET /)"]
-    SLACK["💬 Slack Bot"]
-    CLI["⌨️ CLI / Scripts"]
+    CHAT[Browser / Chat UI]
+    SLACK[Slack Bot]
+    CLI[CLI / Scripts]
+    CB[Cloud Build]
+    GH[GitHub PR]
 
-    CB -->|"POST /review\n{diff}"| FLASK
-    CHAT -->|"POST /query\n{input}"| FLASK
-    SLACK -->|"POST /query\n{input}"| FLASK
-    CLI -->|"POST /query\n{input}"| FLASK
-
-    subgraph CR["Cloud Run"]
-        FLASK["Flask App\napp.py"]
-        FLASK --> ROOT
-
-        subgraph ADK["ADK Multi-Agent"]
-            ROOT["🤖 Root Agent\ngovernance_agent"]
-            GOV["governance_rules_agent\nCompliance · PR Standards · Branching"]
-            SEC["security_agent\nSecrets · OWASP · APIs"]
-            QUA["code_quality_agent\nNaming · Error Handling · Testing"]
-
-            ROOT -->|delegates| GOV
-            ROOT -->|delegates| SEC
-            ROOT -->|delegates| QUA
+    subgraph CR[Cloud Run]
+        FLASK[Flask App]
+        subgraph ADK[ADK Multi-Agent]
+            ROOT[Root Agent]
+            GOV[Governance Agent]
+            SEC[Security Agent]
+            QUA[Code Quality Agent]
+            ROOT --> GOV
+            ROOT --> SEC
+            ROOT --> QUA
         end
+        FLASK --> ROOT
     end
 
-    GCS[("☁️ GCS\ngs://governance-rules-bucket/\n├── governance/\n├── security/\n└── code-quality/")]
+    GEMINI[Gemini / Vertex AI]
+    GCS[(GCS — Rules Bucket)]
 
-    GOV -->|"load_governance_rules()"| GCS
-    SEC -->|"load_security_rules()"| GCS
-    QUA -->|"load_code_quality_rules()"| GCS
+    CHAT --> FLASK
+    SLACK --> FLASK
+    CLI --> FLASK
+    CB --> FLASK
 
-    ROOT -->|"consolidated response"| FLASK
-    FLASK -->|"{approved, violations,\nfeedback_md}"| CB
-    FLASK -->|"{response}"| CHAT
-    FLASK -->|"{response}"| SLACK
-    FLASK -->|"{response}"| CLI
+    GOV --> GCS
+    SEC --> GCS
+    QUA --> GCS
 
-    CB -->|"posts comment\non PR"| GH["🐙 GitHub PR"]
-    CB -->|"exit 0 / exit 1"| BUILD["Build status\n✅ Approved / ❌ Rejected"]
+    ROOT --> GEMINI
+
+    FLASK --> CB
+    CB --> GH
 ```
-
-The full diagram source is at [`docs/architecture.mmd`](docs/architecture.mmd).
 
 ## Prerequisites
 
