@@ -1,0 +1,31 @@
+# Secrets — nunca commitar
+.env
+*.env
+*.key
+*.pem
+service-account*.json
+credentials*.json
+
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Build / dist
+dist/
+build/
+*.egg-info/

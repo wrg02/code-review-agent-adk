@@ -1,0 +1,5 @@
+google-adk>=0.3.0
+google-cloud-storage
+flask[async]
+gunicorn
+python-dotenv

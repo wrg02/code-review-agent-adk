@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Governance Agent</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --primary: #1a73e8;
+    --primary-hover: #1557b0;
+    --text: #202124;
+    --text-secondary: #5f6368;
+    --border: #dadce0;
+    --agent-bg: #f1f3f4;
+    --user-bg: #1a73e8;
+    --user-text: #ffffff;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  header .icon {
+    width: 36px; height: 36px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px;
+  }
+
+  header h1 { font-size: 18px; font-weight: 600; }
+  header p  { font-size: 13px; color: var(--text-secondary); }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .msg {
+    max-width: 720px;
+    line-height: 1.55;
+    font-size: 15px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: var(--user-bg);
+    color: var(--user-text);
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.agent {
+    align-self: flex-start;
+    background: var(--agent-bg);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Markdown inside agent messages */
+  .msg.agent p { margin-bottom: 8px; }
+  .msg.agent p:last-child { margin-bottom: 0; }
+  .msg.agent strong { font-weight: 600; }
+  .msg.agent ul, .msg.agent ol { margin: 6px 0 6px 20px; }
+  .msg.agent li { margin-bottom: 4px; }
+  .msg.agent code {
+    background: rgba(0,0,0,.07);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  .msg.agent pre {
+    background: #263238;
+    color: #eeffff;
+    padding: 12px 14px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 8px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .msg.agent pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  .msg.agent blockquote {
+    border-left: 3px solid var(--primary);
+    padding-left: 12px;
+    margin: 8px 0;
+    color: var(--text-secondary);
+  }
+
+  .loading {
+    align-self: flex-start;
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px;
+  }
+
+  .loading span {
+    width: 8px; height: 8px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    animation: bounce .6s infinite alternate;
+  }
+  .loading span:nth-child(2) { animation-delay: .2s; }
+  .loading span:nth-child(3) { animation-delay: .4s; }
+
+  @keyframes bounce {
+    to { opacity: .3; transform: translateY(-4px); }
+  }
+
+  #input-area {
+    flex-shrink: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    gap: 10px;
+  }
+
+  #input-area textarea {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.4;
+    transition: border-color .15s;
+  }
+
+  #input-area textarea:focus { border-color: var(--primary); }
+
+  #input-area button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0 20px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+
+  #input-area button:hover { background: var(--primary-hover); }
+  #input-area button:disabled { opacity: .5; cursor: default; }
+
+  @media (max-width: 600px) {
+    header { padding: 12px 14px; }
+    #messages { padding: 14px; }
+    #input-area { padding: 10px 14px; }
+    .msg { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="icon">G</div>
+    <div>
+      <h1>Governance Agent</h1>
+      <p>Assistente de governanca, seguranca e qualidade de codigo</p>
+    </div>
+  </header>
+
+  <div id="messages"></div>
+
+  <div id="input-area">
+    <textarea id="input" placeholder="Digite sua pergunta..." rows="1"></textarea>
+    <button id="send">Enviar</button>
+  </div>
+
+<script>
+(function() {
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
+  let busy = false;
+
+  // Auto-resize textarea
+  inputEl.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  inputEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  sendBtn.addEventListener('click', send);
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addMessage(text, role) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    if (role === 'agent') {
+      div.innerHTML = renderMarkdown(text);
+    } else {
+      div.textContent = text;
+    }
+    messagesEl.appendChild(div);
+    scrollToBottom();
+    return div;
+  }
+
+  function showLoading() {
+    const div = document.createElement('div');
+    div.className = 'loading';
+    div.id = 'loading';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    messagesEl.appendChild(div);
+    scrollToBottom();
+  }
+
+  function hideLoading() {
+    const el = document.getElementById('loading');
+    if (el) el.remove();
+  }
+
+  async function send() {
+    const text = inputEl.value.trim();
+    if (!text || busy) return;
+
+    addMessage(text, 'user');
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    busy = true;
+    sendBtn.disabled = true;
+    showLoading();
+
+    try {
+      const res = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: text })
+      });
+      const data = await res.json();
+      hideLoading();
+      addMessage(data.response || data.error || 'Sem resposta.', 'agent');
+    } catch (err) {
+      hideLoading();
+      addMessage('Erro de conexao. Tente novamente.', 'agent');
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+  }
+
+  // Minimal markdown renderer
+  function renderMarkdown(text) {
+    // Escape HTML
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Code blocks
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
+      return '<pre><code>' + code.replace(/\n$/, '') + '</code></pre>';
+    });
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Italic
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Blockquote
+    html = html.replace(/(^|\n)&gt; (.+)/g, '$1<blockquote>$2</blockquote>');
+
+    // Unordered lists
+    html = html.replace(/(^|\n)(- .+(?:\n- .+)*)/g, function(_, pre, block) {
+      const items = block.split('\n').map(l => '<li>' + l.replace(/^- /, '') + '</li>').join('');
+      return pre + '<ul>' + items + '</ul>';
+    });
+
+    // Ordered lists
+    html = html.replace(/(^|\n)(\d+\. .+(?:\n\d+\. .+)*)/g, function(_, pre, block) {
+      const items = block.split('\n').map(l => '<li>' + l.replace(/^\d+\. /, '') + '</li>').join('');
+      return pre + '<ol>' + items + '</ol>';
+    });
+
+    // Headings
+    html = html.replace(/(^|\n)### (.+)/g, '$1<h4>$2</h4>');
+    html = html.replace(/(^|\n)## (.+)/g, '$1<h3>$2</h3>');
+    html = html.replace(/(^|\n)# (.+)/g, '$1<h2>$2</h2>');
+
+    // Paragraphs — split by double newline
+    html = html.replace(/\n{2,}/g, '</p><p>');
+    html = '<p>' + html + '</p>';
+
+    // Clean up empty paragraphs and paragraphs wrapping block elements
+    html = html.replace(/<p>\s*<\/p>/g, '');
+    html = html.replace(/<p>(<(?:pre|ul|ol|h[2-4]|blockquote)[\s\S]*?<\/(?:pre|ul|ol|h[2-4]|blockquote)>)<\/p>/g, '$1');
+
+    return html;
+  }
+})();
+</script>
+</body>
+</html>

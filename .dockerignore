@@ -1,0 +1,31 @@
+# Secrets — nunca incluir na imagem
+.env
+*.env
+*.key
+*.pem
+service-account*.json
+credentials*.json
+
+# Ambiente virtual local
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+.coverage
+
+# Dev / CI
+tests/
+docs/
+regras/
+.gitignore
+.dockerignore
+README.md
+
+# IDEs
+.idea/
+.vscode/

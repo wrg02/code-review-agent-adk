@@ -1,0 +1,41 @@
+flowchart TD
+    CB["☁️ Cloud Build\nPR Review pipeline"]
+    CHAT["🌐 Browser\nChat UI (GET /)"]
+    SLACK["💬 Slack Bot"]
+    CLI["⌨️ CLI / Scripts"]
+
+    CB -->|"POST /review\n{diff}"| FLASK
+    CHAT -->|"POST /query\n{input}"| FLASK
+    SLACK -->|"POST /query\n{input}"| FLASK
+    CLI -->|"POST /query\n{input}"| FLASK
+
+    subgraph CR["Cloud Run"]
+        FLASK["Flask App\napp.py"]
+        FLASK --> ROOT
+
+        subgraph ADK["ADK Multi-Agent"]
+            ROOT["🤖 Root Agent\ngovernance_agent"]
+            GOV["governance_rules_agent\nCompliance · PR Standards · Branching"]
+            SEC["security_agent\nSecrets · OWASP · APIs"]
+            QUA["code_quality_agent\nNaming · Error Handling · Testes"]
+
+            ROOT -->|delega| GOV
+            ROOT -->|delega| SEC
+            ROOT -->|delega| QUA
+        end
+    end
+
+    GCS[("☁️ GCS\ngs://governance-rules-bucket/\n├── governance/\n├── security/\n└── code-quality/")]
+
+    GOV -->|"load_governance_rules()"| GCS
+    SEC -->|"load_security_rules()"| GCS
+    QUA -->|"load_code_quality_rules()"| GCS
+
+    ROOT -->|"resposta consolidada"| FLASK
+    FLASK -->|"{aprovado, violacoes,\nfeedback_md}"| CB
+    FLASK -->|"{response}"| CHAT
+    FLASK -->|"{response}"| SLACK
+    FLASK -->|"{response}"| CLI
+
+    CB -->|"posta comentário\nno PR"| GH["🐙 GitHub PR"]
+    CB -->|"exit 0 / exit 1"| BUILD["Build status\n✅ Aprovado / ❌ Reprovado"]

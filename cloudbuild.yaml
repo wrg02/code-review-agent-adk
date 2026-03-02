@@ -1,0 +1,99 @@
+# Cloud Build: revisao de PRs via agente de governanca ADK
+# Trigger: conecte este repo ao Cloud Build com trigger de Pull Request
+# Substituicoes obrigatorias no trigger: _AGENT_URL, _GITHUB_REPO, _PR_NUMBER
+# Secret obrigatorio no Secret Manager: github-pat
+
+steps:
+  # 1. Gerar diff do PR
+  - name: gcr.io/cloud-builders/git
+    id: generate-diff
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        git fetch origin ${_BASE_BRANCH}
+        git diff origin/${_BASE_BRANCH}...${COMMIT_SHA} > /workspace/pr_diff.txt
+        echo "Diff gerado com sucesso."
+        cat /workspace/pr_diff.txt | head -50
+
+  # 2. Chamar o agente de governanca no Cloud Run
+  - name: gcr.io/cloud-builders/gcloud
+    id: call-agent
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        IDENTITY_TOKEN=$(gcloud auth print-identity-token --audiences="${_AGENT_URL}")
+
+        DIFF_CONTENT=$(cat /workspace/pr_diff.txt)
+        PAYLOAD=$(jq -n --arg diff "$$DIFF_CONTENT" '{"diff": $$diff}')
+
+        HTTP_CODE=$(curl -s -o /workspace/response.json -w "%{http_code}" \
+          -X POST "${_AGENT_URL}/review" \
+          -H "Authorization: Bearer $${IDENTITY_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "$$PAYLOAD")
+
+        echo "HTTP status: $$HTTP_CODE"
+
+        if [ "$$HTTP_CODE" -ne 200 ]; then
+          echo "Erro ao chamar agente. Resposta:"
+          cat /workspace/response.json
+          exit 1
+        fi
+
+        jq -r '.feedback_md' /workspace/response.json > /workspace/agent_feedback.md
+        jq -r '.aprovado' /workspace/response.json > /workspace/aprovado.txt
+
+        echo "Aprovado: $(cat /workspace/aprovado.txt)"
+
+  # 3. Postar comentario no PR do GitHub
+  - name: gcr.io/cloud-builders/curl
+    id: post-comment
+    entrypoint: bash
+    secretEnv: ['GITHUB_PAT']
+    args:
+      - -c
+      - |
+        if [ ! -f /workspace/agent_feedback.md ]; then
+          echo "Nenhum feedback gerado. Pulando comentario."
+          exit 0
+        fi
+
+        COMMENT_BODY=$(jq -Rs '.' /workspace/agent_feedback.md)
+
+        curl -s -X POST \
+          "https://api.github.com/repos/${_GITHUB_REPO}/issues/${_PR_NUMBER}/comments" \
+          -H "Authorization: token $$GITHUB_PAT" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -d "{\"body\": $${COMMENT_BODY}}"
+
+        echo "Comentario postado no PR #${_PR_NUMBER}."
+
+  # 4. Verificar aprovacao — falha o build se reprovado
+  - name: ubuntu
+    id: check-approval
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        APROVADO=$(cat /workspace/aprovado.txt 2>/dev/null || echo "false")
+        if [ "$$APROVADO" != "true" ]; then
+          echo "PR REPROVADO pelo agente de governanca."
+          exit 1
+        fi
+        echo "PR APROVADO pelo agente de governanca."
+
+substitutions:
+  _BASE_BRANCH: main
+  _AGENT_URL: ''
+  _GITHUB_REPO: ''
+  _PR_NUMBER: ''
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/github-pat/versions/latest
+      env: GITHUB_PAT
+
+options:
+  logging: CLOUD_LOGGING_ONLY
